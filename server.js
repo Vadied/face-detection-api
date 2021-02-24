@@ -1,11 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 
 const bcrypt = require('./bcryptUtils'); 
 
 const app = express();
 
-app.use(bodyParser.json());
 const database = {
   users: [
     {
@@ -38,16 +38,19 @@ const database = {
   ]
 };
 
+app.use(bodyParser.json());
+app.use(cors())
+
 app.get("/", (req, res) => {
-  res.send('backend running');
+  res.send(database.users);
 });
 
-app.get("/signin", (req, res) => {
+app.post("/signin", (req, res) => {
   const user = database.users.find((u) => req.body.email === u.email) || null;
   if (!user) return res.status(404).json("no such user");
 
   const hash = database.login.find((l) => user.email === l.email) || '';
-  if (!bcrypt.compare(req.body.password, hash))
+  if (!bcrypt.comparePassword(req.body.password, hash))
     return res.status(400).json("error logging in");
 
   res.send("success");
@@ -55,7 +58,7 @@ app.get("/signin", (req, res) => {
 
 app.post("/register", (req, res) => {
   const newUser = {
-    id: database.user.length,
+    id: database.users.length,
     name: req.body.name,
     email: req.body.email,
     password: bcrypt.hash(req.body.password),
