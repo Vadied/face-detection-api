@@ -1,45 +1,26 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const knex = require("knex");
+
+const db = knex({
+  client: "pg",
+  connection: {
+    host: "127.0.0.1",
+    user: "postgres",
+    password: "postgres",
+    database: "face_detection",
+  },
+});
 
 const bcryptUtils = require("./bcryptUtils");
 
 const app = express();
 
-const database = {
-  users: [
-    {
-      id: "1",
-      name: "jhon",
-      email: "jhon@gmail.com",
-      joined: new Date(),
-      entries: 0,
-    },
-
-    {
-      id: "2",
-      name: "sally",
-      email: "sally@gmail.com",
-      joined: new Date(),
-      entries: 0,
-    },
-  ],
-  login: [
-    {
-      id: "1",
-      hash: "",
-      email: "jhon@gmail.com",
-    },
-    {
-      id: "2",
-      hash: "",
-      email: "sally@gmail.com",
-    },
-  ],
-};
-
 app.use(bodyParser.json());
 app.use(cors());
+
+const getUserByEmail = (email) => db("users").where({ email }).select("*");
 
 app.get("/", (req, res) => {
   res.send(database.users);
@@ -47,57 +28,71 @@ app.get("/", (req, res) => {
 
 app.post("/signin", (req, res) => {
   const { email, password } = req.body;
-  const user = database.users.find((u) => email === u.email) || null;
-  if (!user) return res.status(404).json("No such user");
-
-  const hash = database.login.find((l) => user.email === l.email) || "";
-  if (!bcrypt.comparePassword(password, hash))
-    return res.status(400).json("Wrong password");
-
-  res.send(user);
+  db("users")
+    .where({ email })
+    .select("*")
+    .then((user) => {
+      if (!user.length) res.status(404).json("No user found");
+      res.json(user[0]);
+    })
+    .catch((e) => res.status(400).json("Error during sign in"));
 });
 
 app.post("/register", (req, res) => {
   const { name, email, password } = req.body;
-
-  const user = database.users.find((u) => email === u.email) || null;
-  if(user)
-    res.status(400).json("Email already in database");
-
+  const hash = bcryptUtils.hashPassword(password);
   const newUser = {
     name,
     email,
-    id: database.users.length + 1,
     joined: new Date(),
-    entries: 0,
   };
-
   const newLogin = {
-    hash: bcryptUtils.hashPassword(password),
-    id: newUser.id,
-    email: newUser.email,
+    hash,
+    email
   };
 
-  database.users.push(newUser);
-  database.login.push(newLogin);
-  res.send(newUser);
+  db.transaction(trx => {
+    trz.insert(newLogin).into('login')
+    .then(loginEmail => {
+      db("users")
+      .insert(newUser)
+      .then(() => res.json(newUser))
+    })
+  })
+  db("users")
+    .returning("*")
+    .insert(newUser)
+    .then((user) => {
+      db("login").returning("*").insert(newLogin);
+    })
+    .catch((e) => res.status(400).json("Error in registration"));
+  res.json(newUser);
 });
 
 app.get("/profile/:id", (req, res) => {
   const { id } = req.params;
-  const user = database.users.find((u) => req.body.email === u.email) || null;
-  if (!user) return res.status(404).json("no such user");
+  db.select("*")
+    .from("users")
+    .where({ id })
+    .then((user) => {
+      if (!user.length) res.status(404).json("No user found");
 
-  res.json(user);
+      res.json(user[0]);
+    });
+});
+
+app.get("/profiles", (req, res) => {
+  res.json(database.users);
 });
 
 app.put("/image", (req, res) => {
   const { id } = req.body;
-  const user = database.users.find((u) => req.body.email === u.email) || null;
-  if (!user) return res.status(404).json("no such user");
-
-  user.entries++;
-  res.json(user.entries);
+  db("users")
+  .where("id", "=", id)
+  .increment("entries", 1)
+  .returning('entries')
+  .then(entries => res.json(entries[0]))
+  .catch(err => res.status(400).json("Error entries"));
 });
 
 app.listen(3000, () => {
