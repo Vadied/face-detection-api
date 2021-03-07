@@ -47,8 +47,8 @@ app.get("/profiles", (req, res) => {
   res.json(database.users);
 });
 
-app.get("/detection", (req, res) => {
-  const data = image.faceDetection(req, res);
+app.post("/detection", async (req, res) => {
+  const data = await image.faceDetection(req, res);
   res.json(data);
 });
 

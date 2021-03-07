@@ -8,7 +8,6 @@ const app = new Clarifai.App({
 
 const faceDetection = async (req, res) => {
   const { input } = req.body;
-  console.log('input', req.body);
   return app.models.predict(Clarifai.FACE_DETECT_MODEL, input);
 };
 
