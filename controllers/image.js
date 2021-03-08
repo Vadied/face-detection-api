@@ -8,7 +8,13 @@ const app = new Clarifai.App({
 
 const faceDetection = async (req, res) => {
   const { input } = req.body;
-  return app.models.predict(Clarifai.FACE_DETECT_MODEL, input);
+  try {
+  const data = await app.models.predict(Clarifai.FACE_DETECT_MODEL, input);
+  res.json(data);
+  } catch (e) {
+    console.log(e);
+    res.status(400).json("Unable to work with API");
+  }
 };
 
 module.exports = {

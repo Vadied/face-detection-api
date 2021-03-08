@@ -20,6 +20,7 @@ const db = knex({
 
 const bcryptUtils = require("./bcryptUtils");
 
+const PORT = process.env.PORT;
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -31,31 +32,13 @@ app.get("/", async (req, res) => {
   res.json(globalConstants);
 });
 
-app.post("/signin", (req, res) => {
-  signin.handleSignin(req, res, db);
-});
+app.post("/signin", (req, res) => signin.handleSignin(req, res, db));
+app.post("/register", (req, res) => register.handleRegister(req, res, db));
+app.get("/profile/:id", (req, res) => user.getUserById(req, res, db));
+app.get("/profiles", (req, res) => res.json(database.users));
+app.post("/detection", (req, res) => image.faceDetection(req, res));
+app.put("/image", (req, res) => user.updateEntries(req, res, db));
 
-app.post("/register", (req, res) => {
-  register.handleRegister(req, res, db);
-});
-
-app.get("/profile/:id", (req, res) => {
-  user.getUserById(req, res, db);
-});
-
-app.get("/profiles", (req, res) => {
-  res.json(database.users);
-});
-
-app.post("/detection", async (req, res) => {
-  const data = await image.faceDetection(req, res);
-  res.json(data);
-});
-
-app.put("/image", (req, res) => {
-  user.updateEntries(req, res, db);
-});
-
-app.listen(3000, () => {
-  console.log("app running on port 3000");
+app.listen(PORT, () => {
+  console.log("app running on port " + PORT);
 });
