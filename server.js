@@ -26,10 +26,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.get("/", async (req, res) => {
-  const globalConstants = db("globalConstants")
-    .where("active", "=", 1)
-    .select("*");
-  res.json(globalConstants);
+  res.json("it's working");
 });
 
 app.post("/signin", (req, res) => signin.handleSignin(req, res, db));
