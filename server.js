@@ -20,7 +20,8 @@ const db = knex({
 
 const bcryptUtils = require("./bcryptUtils");
 
-const PORT = process.env.PORT || 3000;
+// const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
